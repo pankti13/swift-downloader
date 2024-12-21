@@ -1,19 +1,26 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QWidget>
+#include <QMainWindow>  
 
 class QLabel;
+class QLineEdit;
+class QPushButton;
 
-class MainWindow : public QWidget {
+class MainWindow : public QMainWindow {   
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr); 
+    MainWindow(QWidget *parent = nullptr);
+    void onOkClicked();
+    void onCancelClicked();
+
     ~MainWindow();                         
 
 private:
-    QLabel *label;
+    QLineEdit *urlLineEdit;
+    QLineEdit *fileNameLineEdit;
+    QLineEdit *saveLocationLineEdit;
 };
 
-#endif // MAINWINDOW_H
+#endif
