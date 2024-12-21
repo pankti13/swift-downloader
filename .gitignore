@@ -1,0 +1,17 @@
+.vscode/
+build/
+*.pro.user
+*.pro.user.*
+*.user
+*-Debug/
+*.stash
+
+Makefile
+Swift-Downloader_autogen
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Swift-Downloader
+moc*.h
+*.o
+moc_*.cpp
