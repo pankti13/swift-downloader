@@ -32,19 +32,26 @@ private slots:
     void pauseDownload();
     void stopDownload();
     void calculateSpeed();
+    QString formatTime(int seconds);
 
 private:
     QStackedWidget *stackedWidget;
     InputForm *inputForm;
+    QNetworkAccessManager *networkManager;
+
     QWidget *progressPage;
     QTableWidget *progressTable;
     QProgressBar *progressBar;
-    QNetworkAccessManager *networkManager;
+
     qint64 lastBytesReceived = 0;
     QTimer *speedTimer;
     double downloadSpeed = 0.0;
-    QString formatTime(int seconds);
     qint64 totalTime;
+
+    QPushButton *pauseButton;
+    QPushButton *stopButton;
+    bool isPaused = false;
+    qint64 pausedBytesReceived = 0;
 };
 
 #endif

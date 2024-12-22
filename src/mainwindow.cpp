@@ -30,8 +30,8 @@ MainWindow::MainWindow(QWidget *parent)
     progressBar->setRange(0, 100);
     progressBar->setValue(0);
 
-    QPushButton *pauseButton = new QPushButton("Pause", progressPage);
-    QPushButton *stopButton = new QPushButton("Stop", progressPage);
+    pauseButton = new QPushButton("Pause", progressPage);
+    stopButton = new QPushButton("Stop", progressPage);
     QHBoxLayout *buttonLayout = new QHBoxLayout;
     buttonLayout->addWidget(pauseButton);
     buttonLayout->addWidget(stopButton);
@@ -93,14 +93,20 @@ void MainWindow::updateStatus(const QString &status) {
 }
 
 void MainWindow::startDownload(const QString &url, const QString &fileName, const QString &saveLocation) {
-    QNetworkReply *reply = networkManager->get(QNetworkRequest(QUrl(url)));
+    if (isPaused) return;
+
+    QNetworkRequest request = QNetworkRequest(QUrl(url));
+    if (pausedBytesReceived > 0) {
+        request.setRawHeader("Range", QString("bytes=%1-").arg(pausedBytesReceived).toUtf8());
+    }
+    QNetworkReply *reply = networkManager->get(request);
 
     connect(reply, &QNetworkReply::downloadProgress, this, &MainWindow::updateProgress);
     connect(reply, &QNetworkReply::finished, this, [this, reply, fileName, saveLocation]() {
         speedTimer->stop();
         if (reply->error() == QNetworkReply::NoError) {
             QFile file(saveLocation + "/" + fileName);
-            if (file.open(QIODevice::WriteOnly)) {
+            if (file.open(QIODevice::WriteOnly | QIODevice::Append)) {
                 file.write(reply->readAll());
                 file.close();
             }
@@ -110,19 +116,22 @@ void MainWindow::startDownload(const QString &url, const QString &fileName, cons
         }
         reply->deleteLater();
     });
-    lastBytesReceived = 0;
+    lastBytesReceived = pausedBytesReceived;
     downloadSpeed = 0.0;
     speedTimer->start(1000);
     totalTime = 0;
 }
 
 void MainWindow::updateProgress(qint64 bytesReceived, qint64 bytesTotal) {
+    if (isPaused) return;
+    qint64 totalBytesReceived = bytesReceived + pausedBytesReceived;
+
     if (progressBar && progressTable) {
-        int progress = (bytesTotal > 0) ? static_cast<int>((bytesReceived * 100) / bytesTotal) : 0;
+        int progress = (bytesTotal > 0) ? static_cast<int>((totalBytesReceived * 100) / bytesTotal) : 0;
         progressBar->setValue(progress);
 
         int row = progressTable->rowCount() - 1; 
-        progressTable->setItem(row, 2, new QTableWidgetItem(QString("%1/%2").arg(bytesReceived).arg(bytesTotal)));
+        progressTable->setItem(row, 2, new QTableWidgetItem(QString("%1/%2").arg(totalBytesReceived).arg(bytesTotal)));
         progressTable->setItem(row, 3, new QTableWidgetItem("Downloading"));
         progressBar->show();
     }
@@ -139,19 +148,24 @@ void MainWindow::calculateSpeed() {
     qint64 bytesReceived = downloadedTotal[0].toLongLong();
     qint64 bytesTotal = downloadedTotal[1].toLongLong();
 
+    if (bytesTotal == 0) return;
     if (totalTime == 0 && downloadSpeed > 0) {
         totalTime = static_cast<double>(bytesTotal) / downloadSpeed;
     }
     downloadSpeed = bytesReceived - lastBytesReceived;
     lastBytesReceived = bytesReceived;
-    double remainingTime = (bytesTotal - bytesReceived) / downloadSpeed;
+    double remainingTime = (downloadSpeed > 0) ? (bytesTotal - bytesReceived) / downloadSpeed : 0;
+    
+    if (remainingTime < 0) {
+        remainingTime = 0;
+    }
 
     QString totalTimeStr = formatTime(static_cast<int>(totalTime));
     QString remainingTimeStr = formatTime(static_cast<int>(remainingTime));
     if (progressTable->item(row, 4)) {
-            progressTable->setItem(row, 4, new QTableWidgetItem(
-                QString("%1/%2").arg(remainingTimeStr, totalTimeStr)));
-        }
+        progressTable->setItem(row, 4, new QTableWidgetItem(
+            QString("%1/%2").arg(remainingTimeStr, totalTimeStr)));
+    }
 }
 
 QString MainWindow::formatTime(int seconds) {
@@ -166,7 +180,26 @@ QString MainWindow::formatTime(int seconds) {
 }
 
 void MainWindow::pauseDownload() {
-    updateStatus("Paused");
+    int row = progressTable->rowCount() - 1;
+    if (row < 0) return;
+
+    if (isPaused) {
+        updateStatus("Downloading");
+        isPaused = false;
+        pauseButton->setText("Pause");
+
+        QString url = inputForm->getUrl();
+        QString fileName = inputForm->getFileName();
+        QString saveLocation = inputForm->getSaveLocation();
+        startDownload(url, fileName, saveLocation); 
+
+    } else {
+        pausedBytesReceived = lastBytesReceived; 
+        updateStatus("Paused");
+        isPaused = true;
+        pauseButton->setText("Play");
+        networkManager->clearAccessCache(); 
+    }
 }
 
 void MainWindow::stopDownload() {
