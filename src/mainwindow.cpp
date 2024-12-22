@@ -36,16 +36,10 @@ MainWindow::MainWindow(QWidget *parent)
     buttonLayout->addWidget(pauseButton);
     buttonLayout->addWidget(stopButton);
 
-    QPushButton *backButton = new QPushButton("Back", progressPage);
     QVBoxLayout *progressLayout = new QVBoxLayout(progressPage);
     progressLayout->addWidget(progressTable);
     progressLayout->addWidget(progressBar);
     progressLayout->addLayout(buttonLayout);
-    progressLayout->addWidget(backButton);
-
-    connect(backButton, &QPushButton::clicked, [this]() {
-        stackedWidget->setCurrentWidget(inputForm);
-    });
 
     connect(pauseButton, &QPushButton::clicked, this, &MainWindow::pauseDownload);
     connect(stopButton, &QPushButton::clicked, this, &MainWindow::stopDownload);
@@ -93,7 +87,7 @@ void MainWindow::updateStatus(const QString &status) {
 }
 
 void MainWindow::startDownload(const QString &url, const QString &fileName, const QString &saveLocation) {
-    if (isPaused) return;
+    if (isPaused || isStopped) return;
 
     QNetworkRequest request = QNetworkRequest(QUrl(url));
     if (pausedBytesReceived > 0) {
@@ -123,7 +117,7 @@ void MainWindow::startDownload(const QString &url, const QString &fileName, cons
 }
 
 void MainWindow::updateProgress(qint64 bytesReceived, qint64 bytesTotal) {
-    if (isPaused) return;
+    if (isPaused || isStopped) return;
     qint64 totalBytesReceived = bytesReceived + pausedBytesReceived;
 
     if (progressBar && progressTable) {
@@ -203,5 +197,28 @@ void MainWindow::pauseDownload() {
 }
 
 void MainWindow::stopDownload() {
-    updateStatus("Stopped");
+    int row = progressTable->rowCount() - 1;
+    if (row < 0) return;
+
+    if (isStopped) {
+        updateStatus("Downloading");
+        isStopped = false;
+        stopButton->setText("Stop");
+
+        lastBytesReceived = 0;
+        pausedBytesReceived = 0;
+        progressBar->setValue(0); 
+        totalTime = 0;
+        QString url = inputForm->getUrl();
+        QString fileName = inputForm->getFileName();
+        QString saveLocation = inputForm->getSaveLocation();        
+        startDownload(url, fileName, saveLocation); 
+
+    } else {
+        pausedBytesReceived = lastBytesReceived;
+        updateStatus("Stopped");
+        isStopped = true;
+        stopButton->setText("Retry");
+        networkManager->clearAccessCache(); 
+    }
 }
