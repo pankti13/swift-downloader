@@ -15,5 +15,3 @@ Swift-Downloader
 moc*.h
 *.o
 moc_*.cpp
-src/downloadprogresswindow.cpp
-src/downloadprogresswindow.h

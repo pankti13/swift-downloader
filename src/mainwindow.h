@@ -1,26 +1,27 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>  
+#include <QMainWindow>
+#include <QStackedWidget>
 
-class QLabel;
-class QLineEdit;
-class QPushButton;
+class InputForm;
+class QWidget;
 
-class MainWindow : public QMainWindow {   
+class MainWindow : public QMainWindow {
     Q_OBJECT
 
 public:
     MainWindow(QWidget *parent = nullptr);
-    void onOkClicked();
-    void onCancelClicked();
+    ~MainWindow();
 
-    ~MainWindow();                         
+private slots:
+    void handleFormSubmission();
+    void handleFormCancellation();
 
 private:
-    QLineEdit *urlLineEdit;
-    QLineEdit *fileNameLineEdit;
-    QLineEdit *saveLocationLineEdit;
+    QStackedWidget *stackedWidget;
+    InputForm *inputForm;
+    QWidget *progressPage;
 };
 
 #endif

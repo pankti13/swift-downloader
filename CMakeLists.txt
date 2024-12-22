@@ -9,6 +9,7 @@ find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets Network)
 set(SOURCES
     src/main.cpp
     src/mainwindow.cpp
+    src/inputform.cpp
 )
 add_executable(Swift-Downloader ${SOURCES})
 target_link_libraries(Swift-Downloader Qt5::Core Qt5::Gui Qt5::Widgets Qt5::Network)
