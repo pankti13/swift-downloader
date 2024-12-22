@@ -31,6 +31,7 @@ private slots:
     void updateStatus(const QString &status);
     void pauseDownload();
     void stopDownload();
+    void calculateSpeed();
 
 private:
     QStackedWidget *stackedWidget;
@@ -39,6 +40,11 @@ private:
     QTableWidget *progressTable;
     QProgressBar *progressBar;
     QNetworkAccessManager *networkManager;
+    qint64 lastBytesReceived = 0;
+    QTimer *speedTimer;
+    double downloadSpeed = 0.0;
+    QString formatTime(int seconds);
+    qint64 totalTime;
 };
 
 #endif

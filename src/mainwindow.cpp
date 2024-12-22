@@ -9,13 +9,15 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QFile>
+#include <QTimer>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
       stackedWidget(new QStackedWidget(this)),
       inputForm(new InputForm(this)),
       progressPage(new QWidget(this)),
-      networkManager(new QNetworkAccessManager(this)) {
+      networkManager(new QNetworkAccessManager(this)),
+      speedTimer(new QTimer(this)) {
 
     // Setup progress page
     progressTable = new QTableWidget(progressPage);
@@ -47,6 +49,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(pauseButton, &QPushButton::clicked, this, &MainWindow::pauseDownload);
     connect(stopButton, &QPushButton::clicked, this, &MainWindow::stopDownload);
+    connect(speedTimer, &QTimer::timeout, this, &MainWindow::calculateSpeed);
 
     // Setup stacked widget
     stackedWidget->addWidget(inputForm);
@@ -94,6 +97,7 @@ void MainWindow::startDownload(const QString &url, const QString &fileName, cons
 
     connect(reply, &QNetworkReply::downloadProgress, this, &MainWindow::updateProgress);
     connect(reply, &QNetworkReply::finished, this, [this, reply, fileName, saveLocation]() {
+        speedTimer->stop();
         if (reply->error() == QNetworkReply::NoError) {
             QFile file(saveLocation + "/" + fileName);
             if (file.open(QIODevice::WriteOnly)) {
@@ -106,6 +110,10 @@ void MainWindow::startDownload(const QString &url, const QString &fileName, cons
         }
         reply->deleteLater();
     });
+    lastBytesReceived = 0;
+    downloadSpeed = 0.0;
+    speedTimer->start(1000);
+    totalTime = 0;
 }
 
 void MainWindow::updateProgress(qint64 bytesReceived, qint64 bytesTotal) {
@@ -118,6 +126,43 @@ void MainWindow::updateProgress(qint64 bytesReceived, qint64 bytesTotal) {
         progressTable->setItem(row, 3, new QTableWidgetItem("Downloading"));
         progressBar->show();
     }
+}
+
+void MainWindow::calculateSpeed() {
+    int row = progressTable->rowCount() - 1;
+    if (row < 0) return;
+
+    QTableWidgetItem *item = progressTable->item(row, 2);
+    QStringList downloadedTotal = item->text().split("/");
+    if (downloadedTotal.size() != 2) return;
+
+    qint64 bytesReceived = downloadedTotal[0].toLongLong();
+    qint64 bytesTotal = downloadedTotal[1].toLongLong();
+
+    if (totalTime == 0 && downloadSpeed > 0) {
+        totalTime = static_cast<double>(bytesTotal) / downloadSpeed;
+    }
+    downloadSpeed = bytesReceived - lastBytesReceived;
+    lastBytesReceived = bytesReceived;
+    double remainingTime = (bytesTotal - bytesReceived) / downloadSpeed;
+
+    QString totalTimeStr = formatTime(static_cast<int>(totalTime));
+    QString remainingTimeStr = formatTime(static_cast<int>(remainingTime));
+    if (progressTable->item(row, 4)) {
+            progressTable->setItem(row, 4, new QTableWidgetItem(
+                QString("%1/%2").arg(remainingTimeStr, totalTimeStr)));
+        }
+}
+
+QString MainWindow::formatTime(int seconds) {
+    int hours = seconds / 3600;
+    int minutes = (seconds % 3600) / 60;
+    seconds = seconds % 60;
+
+    return QString("%1:%2:%3")
+        .arg(hours, 2, 10, QChar('0'))
+        .arg(minutes, 2, 10, QChar('0'))
+        .arg(seconds, 2, 10, QChar('0'));
 }
 
 void MainWindow::pauseDownload() {
