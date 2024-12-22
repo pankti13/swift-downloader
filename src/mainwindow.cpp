@@ -56,7 +56,7 @@ MainWindow::MainWindow(QWidget *parent)
     // Connect signals from input form
     connect(inputForm, &InputForm::formSubmitted, this, &MainWindow::handleFormSubmission);
     connect(inputForm, &InputForm::formCanceled, this, &MainWindow::handleFormCancellation);
-    resize(900, 450);
+    resize(1200, 600);
 }
 
 MainWindow::~MainWindow() {}
@@ -76,6 +76,7 @@ void MainWindow::handleFormSubmission() {
     progressTable->setItem(row, 3, new QTableWidgetItem("To Be Started"));
     progressTable->setItem(row, 4, new QTableWidgetItem("N/A"));
 
+    startDownload(url, fileName, saveLocation);
     stackedWidget->setCurrentWidget(progressPage);
 }
 
@@ -86,6 +87,37 @@ void MainWindow::handleFormCancellation() {
 void MainWindow::updateStatus(const QString &status) {
     int row = progressTable->rowCount() - 1; 
     progressTable->setItem(row, 3, new QTableWidgetItem(status));
+}
+
+void MainWindow::startDownload(const QString &url, const QString &fileName, const QString &saveLocation) {
+    QNetworkReply *reply = networkManager->get(QNetworkRequest(QUrl(url)));
+
+    connect(reply, &QNetworkReply::downloadProgress, this, &MainWindow::updateProgress);
+    connect(reply, &QNetworkReply::finished, this, [this, reply, fileName, saveLocation]() {
+        if (reply->error() == QNetworkReply::NoError) {
+            QFile file(saveLocation + "/" + fileName);
+            if (file.open(QIODevice::WriteOnly)) {
+                file.write(reply->readAll());
+                file.close();
+            }
+            updateStatus("Completed");
+        } else {
+            updateStatus("Error Occurred");
+        }
+        reply->deleteLater();
+    });
+}
+
+void MainWindow::updateProgress(qint64 bytesReceived, qint64 bytesTotal) {
+    if (progressBar && progressTable) {
+        int progress = (bytesTotal > 0) ? static_cast<int>((bytesReceived * 100) / bytesTotal) : 0;
+        progressBar->setValue(progress);
+
+        int row = progressTable->rowCount() - 1; 
+        progressTable->setItem(row, 2, new QTableWidgetItem(QString("%1/%2").arg(bytesReceived).arg(bytesTotal)));
+        progressTable->setItem(row, 3, new QTableWidgetItem("Downloading"));
+        progressBar->show();
+    }
 }
 
 void MainWindow::pauseDownload() {

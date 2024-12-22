@@ -26,6 +26,8 @@ private slots:
     void handleFormSubmission();
     void handleFormCancellation();
 
+    void startDownload(const QString &url, const QString &fileName, const QString &saveLocation);
+    void updateProgress(qint64 bytesReceived, qint64 bytesTotal);
     void updateStatus(const QString &status);
     void pauseDownload();
     void stopDownload();
