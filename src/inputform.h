@@ -12,6 +12,8 @@ class InputForm : public QWidget {
 public:
     explicit InputForm(QWidget *parent = nullptr);
 
+    bool validateInputs();
+
     QString getUrl() const;
     QString getFileName() const;
     QString getSaveLocation() const;

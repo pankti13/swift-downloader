@@ -5,6 +5,8 @@
 #include <QVBoxLayout>
 #include <QPushButton>
 #include <QMessageBox>
+#include <QUrl>
+#include <QRegExpValidator>
 
 InputForm::InputForm(QWidget *parent)
     : QWidget(parent),
@@ -28,19 +30,37 @@ InputForm::InputForm(QWidget *parent)
     mainLayout->addLayout(buttonLayout);
 
     setLayout(mainLayout);
+    urlLineEdit->setPlaceholderText("http://example.com");
+    fileNameLineEdit->setPlaceholderText("Example Dataset");
+    saveLocationLineEdit->setPlaceholderText("/home/user/Downloads");
 
     // Connect buttons
     connect(okButton, &QPushButton::clicked, [this]() {
-        if (urlLineEdit->text().isEmpty() ||
-            fileNameLineEdit->text().isEmpty() ||
-            saveLocationLineEdit->text().isEmpty()) {
-            QMessageBox::warning(this, "Input Error", "All fields must be filled!");
+        if (!validateInputs()) {
             return;
         }
         emit formSubmitted();
     });
-
     connect(cancelButton, &QPushButton::clicked, this, &InputForm::formCanceled);
+}
+
+bool InputForm::validateInputs() {
+    QRegExp urlRegex("(https?|ftp)://[\\w\\-]+(\\.[\\w\\-]+)+[/#?]?.*");
+    QRegExpValidator *urlValidator = new QRegExpValidator(urlRegex, this);
+    urlLineEdit->setValidator(urlValidator);
+
+    if (urlLineEdit->text().isEmpty() ||
+        fileNameLineEdit->text().isEmpty() ||
+        saveLocationLineEdit->text().isEmpty()) {
+        QMessageBox::warning(this, "Input Error", "All fields must be filled!");
+        return false;
+    }
+    QUrl url(urlLineEdit->text());
+    if (!url.isValid() || url.scheme().isEmpty()) {
+        QMessageBox::warning(this, "Input Error", "Please enter a valid URL.");
+        return false;
+    }
+    return true;
 }
 
 QString InputForm::getUrl() const {
