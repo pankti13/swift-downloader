@@ -6,6 +6,7 @@
 #include <QPushButton>
 #include <QHeaderView>
 #include <QProgressBar>
+#include <QMessageBox>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QFile>
@@ -31,10 +32,16 @@ MainWindow::MainWindow(QWidget *parent)
     progressBar->setValue(0);
 
     pauseButton = new QPushButton("Pause", progressPage);
+    pauseButton->setIcon(QIcon(":/icons/pause_icon.png"));
     stopButton = new QPushButton("Stop", progressPage);
+    stopButton->setIcon(QIcon(":/icons/stop_icon.png"));
+    cancelButton = new QPushButton("Cancel", progressPage);
+    cancelButton->setIcon(QIcon(":/icons/cancel_icon.png"));
+
     QHBoxLayout *buttonLayout = new QHBoxLayout;
     buttonLayout->addWidget(pauseButton);
     buttonLayout->addWidget(stopButton);
+    buttonLayout->addWidget(cancelButton);
 
     QVBoxLayout *progressLayout = new QVBoxLayout(progressPage);
     progressLayout->addWidget(progressTable);
@@ -43,6 +50,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(pauseButton, &QPushButton::clicked, this, &MainWindow::pauseDownload);
     connect(stopButton, &QPushButton::clicked, this, &MainWindow::stopDownload);
+    connect(cancelButton, &QPushButton::clicked, this, &MainWindow::handleFormCancellation);
     connect(speedTimer, &QTimer::timeout, this, &MainWindow::calculateSpeed);
 
     // Setup stacked widget
@@ -78,6 +86,7 @@ void MainWindow::handleFormSubmission() {
 }
 
 void MainWindow::handleFormCancellation() {
+    QMessageBox::warning(this, "Warning", "This will close the window.");
     close();
 }
 
@@ -181,6 +190,7 @@ void MainWindow::pauseDownload() {
         updateStatus("Downloading");
         isPaused = false;
         pauseButton->setText("Pause");
+        pauseButton->setIcon(QIcon(":/icons/pause_icon.png"));
 
         QString url = inputForm->getUrl();
         QString fileName = inputForm->getFileName();
@@ -192,6 +202,7 @@ void MainWindow::pauseDownload() {
         updateStatus("Paused");
         isPaused = true;
         pauseButton->setText("Play");
+        pauseButton->setIcon(QIcon(":/icons/play_icon.png"));
         networkManager->clearAccessCache(); 
     }
 }
@@ -204,6 +215,7 @@ void MainWindow::stopDownload() {
         updateStatus("Downloading");
         isStopped = false;
         stopButton->setText("Stop");
+        stopButton->setIcon(QIcon(":/icons/stop_icon.png"));
 
         lastBytesReceived = 0;
         pausedBytesReceived = 0;
@@ -219,6 +231,7 @@ void MainWindow::stopDownload() {
         updateStatus("Stopped");
         isStopped = true;
         stopButton->setText("Retry");
+        stopButton->setIcon(QIcon(":/icons/retry_icon.png"));
         networkManager->clearAccessCache(); 
     }
 }

@@ -50,6 +50,7 @@ private:
 
     QPushButton *pauseButton;
     QPushButton *stopButton;
+    QPushButton *cancelButton;
     bool isPaused = false;
     bool isStopped = false;
     qint64 pausedBytesReceived = 0;

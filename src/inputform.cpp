@@ -7,6 +7,7 @@
 #include <QMessageBox>
 #include <QUrl>
 #include <QRegExpValidator>
+#include <QFileDialog>
 
 InputForm::InputForm(QWidget *parent)
     : QWidget(parent),
@@ -14,12 +15,20 @@ InputForm::InputForm(QWidget *parent)
       fileNameLineEdit(new QLineEdit(this)),
       saveLocationLineEdit(new QLineEdit(this)),
       okButton(new QPushButton("OK", this)),
-      cancelButton(new QPushButton("Cancel", this)) {
+      cancelButton(new QPushButton("Cancel", this)),
+      browseButton(new QPushButton("Browse", this)) {
+
+    okButton->setIcon(QIcon(":/icons/ok_icon.png"));
+    cancelButton->setIcon(QIcon(":/icons/cancel_icon.png"));
+
+    QHBoxLayout *saveLocationLayout = new QHBoxLayout;
+    saveLocationLayout->addWidget(saveLocationLineEdit);
+    saveLocationLayout->addWidget(browseButton);
 
     QFormLayout *formLayout = new QFormLayout;
     formLayout->addRow("URL:", urlLineEdit);
     formLayout->addRow("File Name:", fileNameLineEdit);
-    formLayout->addRow("Save Location:", saveLocationLineEdit);
+    formLayout->addRow("Save Location:", saveLocationLayout);
 
     QHBoxLayout *buttonLayout = new QHBoxLayout;
     buttonLayout->addWidget(okButton);
@@ -35,6 +44,7 @@ InputForm::InputForm(QWidget *parent)
     saveLocationLineEdit->setPlaceholderText("/home/user/Downloads");
 
     // Connect buttons
+    connect(browseButton, &QPushButton::clicked, this, &InputForm::browseForSaveLocation);
     connect(okButton, &QPushButton::clicked, [this]() {
         if (!validateInputs()) {
             return;
@@ -61,6 +71,13 @@ bool InputForm::validateInputs() {
         return false;
     }
     return true;
+}
+
+void InputForm::browseForSaveLocation() {
+    QString directory = QFileDialog::getExistingDirectory(this, "Select Save Location");
+    if (!directory.isEmpty()) {
+        saveLocationLineEdit->setText(directory);
+    }
 }
 
 QString InputForm::getUrl() const {

@@ -11,8 +11,8 @@ class InputForm : public QWidget {
 
 public:
     explicit InputForm(QWidget *parent = nullptr);
-
     bool validateInputs();
+    void browseForSaveLocation();
 
     QString getUrl() const;
     QString getFileName() const;
@@ -29,6 +29,7 @@ private:
 
     QPushButton *okButton;
     QPushButton *cancelButton;
+    QPushButton *browseButton;
 };
 
 #endif
