@@ -32,6 +32,8 @@ private slots:
     void pauseDownload();
     void stopDownload();
     void calculateSpeed();
+    qint64 parseSize(const QString &sizeStr);
+    QString formatSize(qint64 size);
     QString formatTime(int seconds);
 
 private:
@@ -47,6 +49,8 @@ private:
     QTimer *speedTimer;
     double downloadSpeed = 0.0;
     qint64 totalTime;
+    QList<qint64> downloadSpeeds;
+    const int maxSpeedHistory = 5;
 
     QPushButton *pauseButton;
     QPushButton *stopButton;

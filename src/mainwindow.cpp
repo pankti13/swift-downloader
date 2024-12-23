@@ -75,7 +75,9 @@ void MainWindow::handleFormSubmission() {
     int row = progressTable->rowCount();
     progressTable->insertRow(row);
 
-    progressTable->setItem(row, 0, new QTableWidgetItem(QDateTime::currentDateTime().toString()));
+    progressTable->setItem(row, 0, new QTableWidgetItem(
+        QDateTime::currentDateTime().toString("ddd MMM dd yyyy HH:mm:ss")
+    ));
     progressTable->setItem(row, 1, new QTableWidgetItem(fileName));
     progressTable->setItem(row, 2, new QTableWidgetItem("0/0"));
     progressTable->setItem(row, 3, new QTableWidgetItem("To Be Started"));
@@ -86,8 +88,14 @@ void MainWindow::handleFormSubmission() {
 }
 
 void MainWindow::handleFormCancellation() {
-    QMessageBox::warning(this, "Warning", "This will close the window.");
-    close();
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::warning(this, "Warning", 
+                                 "This will close the window. Do you want to proceed?",
+                                 QMessageBox::Ok | QMessageBox::Cancel);
+
+    if (reply == QMessageBox::Ok) {
+        close();
+    }
 }
 
 void MainWindow::updateStatus(const QString &status) {
@@ -134,13 +142,26 @@ void MainWindow::updateProgress(qint64 bytesReceived, qint64 bytesTotal) {
         progressBar->setValue(progress);
 
         int row = progressTable->rowCount() - 1; 
-        progressTable->setItem(row, 2, new QTableWidgetItem(QString("%1/%2").arg(totalBytesReceived).arg(bytesTotal)));
+        QString readableDownloaded = formatSize(totalBytesReceived);
+        QString readableTotal = formatSize(bytesTotal);
+        progressTable->setItem(row, 2, new QTableWidgetItem(QString("%1/%2").arg(readableDownloaded, readableTotal)));
         progressTable->setItem(row, 3, new QTableWidgetItem("Downloading"));
         progressBar->show();
     }
 }
 
+QString MainWindow::formatSize(qint64 size) {
+    if (size < 1024)
+        return QString::number(size) + " B";
+    if (size < 1024 * 1024)
+        return QString::number(size / 1024.0, 'f', 2) + " KB";
+    if (size < 1024 * 1024 * 1024)
+        return QString::number(size / (1024.0 * 1024.0), 'f', 2) + " MB";
+    return QString::number(size / (1024.0 * 1024.0 * 1024.0), 'f', 2) + " GB";
+}
+
 void MainWindow::calculateSpeed() {
+    if (isPaused || isStopped) return;
     int row = progressTable->rowCount() - 1;
     if (row < 0) return;
 
@@ -148,16 +169,26 @@ void MainWindow::calculateSpeed() {
     QStringList downloadedTotal = item->text().split("/");
     if (downloadedTotal.size() != 2) return;
 
-    qint64 bytesReceived = downloadedTotal[0].toLongLong();
-    qint64 bytesTotal = downloadedTotal[1].toLongLong();
+    qint64 bytesReceived = parseSize(downloadedTotal[0]);
+    qint64 bytesTotal = parseSize(downloadedTotal[1]);
 
     if (bytesTotal == 0) return;
     if (totalTime == 0 && downloadSpeed > 0) {
         totalTime = static_cast<double>(bytesTotal) / downloadSpeed;
     }
     downloadSpeed = bytesReceived - lastBytesReceived;
+
+    downloadSpeeds.append(downloadSpeed);
+    if (downloadSpeeds.size() > maxSpeedHistory) {
+        downloadSpeeds.pop_front();
+    }
+    qint64 smoothedSpeed = 0;
+    for (qint64 speed : downloadSpeeds) {
+        smoothedSpeed += speed;
+    }
+    smoothedSpeed /= downloadSpeeds.size();
     lastBytesReceived = bytesReceived;
-    double remainingTime = (downloadSpeed > 0) ? (bytesTotal - bytesReceived) / downloadSpeed : 0;
+    double remainingTime = (smoothedSpeed > 0) ? (bytesTotal - bytesReceived) / smoothedSpeed : 0;
     
     if (remainingTime < 0) {
         remainingTime = 0;
@@ -169,6 +200,21 @@ void MainWindow::calculateSpeed() {
         progressTable->setItem(row, 4, new QTableWidgetItem(
             QString("%1/%2").arg(remainingTimeStr, totalTimeStr)));
     }
+}
+
+qint64 MainWindow::parseSize(const QString &sizeStr) {
+    QString size = sizeStr.trimmed();
+    double value = size.left(size.size() - 2).toDouble();
+    QString unit = size.right(2).trimmed();
+
+    if (unit == "KB")
+        return static_cast<qint64>(value * 1024);
+    else if (unit == "MB")
+        return static_cast<qint64>(value * 1024 * 1024);
+    else if (unit == "GB")
+        return static_cast<qint64>(value * 1024 * 1024 * 1024);
+    else
+        return static_cast<qint64>(value);
 }
 
 QString MainWindow::formatTime(int seconds) {
