@@ -10,17 +10,29 @@
 #include <QFileDialog>
 
 InputForm::InputForm(QWidget *parent)
-    : QWidget(parent),
-      urlLineEdit(new QLineEdit(this)),
-      fileNameLineEdit(new QLineEdit(this)),
-      saveLocationLineEdit(new QLineEdit(this)),
-      okButton(new QPushButton("OK", this)),
-      cancelButton(new QPushButton("Cancel", this)),
-      browseButton(new QPushButton("Browse", this)) {
+    : QWidget(parent) {
+    initializeWidgets();
+    setupLayout();
+    setupConnections();
+}
+
+void InputForm::initializeWidgets() {
+    urlLineEdit = new QLineEdit(this);
+    fileNameLineEdit = new QLineEdit(this);
+    saveLocationLineEdit = new QLineEdit(this);
+    okButton = new QPushButton("OK", this);
+    cancelButton = new QPushButton("Cancel", this);
+    browseButton = new QPushButton("Browse", this);
 
     okButton->setIcon(QIcon(":/icons/ok_icon.png"));
     cancelButton->setIcon(QIcon(":/icons/cancel_icon.png"));
 
+    urlLineEdit->setPlaceholderText("http://example.com");
+    fileNameLineEdit->setPlaceholderText("Example Dataset");
+    saveLocationLineEdit->setPlaceholderText("/home/user/Downloads");
+}
+
+void InputForm::setupLayout() {
     QHBoxLayout *saveLocationLayout = new QHBoxLayout;
     saveLocationLayout->addWidget(saveLocationLineEdit);
     saveLocationLayout->addWidget(browseButton);
@@ -39,11 +51,9 @@ InputForm::InputForm(QWidget *parent)
     mainLayout->addLayout(buttonLayout);
 
     setLayout(mainLayout);
-    urlLineEdit->setPlaceholderText("http://example.com");
-    fileNameLineEdit->setPlaceholderText("Example Dataset");
-    saveLocationLineEdit->setPlaceholderText("/home/user/Downloads");
+}
 
-    // Connect buttons
+void InputForm::setupConnections() {
     connect(browseButton, &QPushButton::clicked, this, &InputForm::browseForSaveLocation);
     connect(okButton, &QPushButton::clicked, [this]() {
         if (!validateInputs()) {

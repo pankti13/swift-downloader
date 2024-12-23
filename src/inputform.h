@@ -23,10 +23,13 @@ signals:
     void formCanceled();
 
 private:
+    void initializeWidgets();
+    void setupLayout();
+    void setupConnections();
+    
     QLineEdit *urlLineEdit;
     QLineEdit *fileNameLineEdit;
     QLineEdit *saveLocationLineEdit;
-
     QPushButton *okButton;
     QPushButton *cancelButton;
     QPushButton *browseButton;
