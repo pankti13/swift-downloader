@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "inputform.h"
+#include "downloadfile.h"
 #include <QTableWidget>
 #include <QVBoxLayout>
 #include <QDateTime>
@@ -104,33 +105,34 @@ void MainWindow::updateStatus(const QString &status) {
 }
 
 void MainWindow::startDownload(const QString &url, const QString &fileName, const QString &saveLocation) {
-    if (isPaused || isStopped) return;
+    int row = progressTable->rowCount() - 1;
+    if (row < 0) return;
+    DownloadFile *downloadFile = new DownloadFile(url, saveLocation + "/" + fileName, this);
 
-    QNetworkRequest request = QNetworkRequest(QUrl(url));
-    if (pausedBytesReceived > 0) {
-        request.setRawHeader("Range", QString("bytes=%1-").arg(pausedBytesReceived).toUtf8());
-    }
-    QNetworkReply *reply = networkManager->get(request);
+    connect(downloadFile, &DownloadFile::downloadProgress, this, [this, row](qint64 bytesReceived, qint64 bytesTotal) {
+        if (progressBar && progressTable) {
+            int progress = (bytesTotal > 0) ? static_cast<int>((bytesReceived * 100) / bytesTotal) : 0;
+            progressBar->setValue(progress);
 
-    connect(reply, &QNetworkReply::downloadProgress, this, &MainWindow::updateProgress);
-    connect(reply, &QNetworkReply::finished, this, [this, reply, fileName, saveLocation]() {
-        speedTimer->stop();
-        if (reply->error() == QNetworkReply::NoError) {
-            QFile file(saveLocation + "/" + fileName);
-            if (file.open(QIODevice::WriteOnly | QIODevice::Append)) {
-                file.write(reply->readAll());
-                file.close();
-            }
-            updateStatus("Completed");
-        } else {
-            updateStatus("Error Occurred");
+            QString readableDownloaded = formatSize(bytesReceived);
+            QString readableTotal = formatSize(bytesTotal);
+            progressTable->setItem(row, 2, new QTableWidgetItem(QString("%1/%2").arg(readableDownloaded, readableTotal)));
+            progressTable->setItem(row, 3, new QTableWidgetItem("Downloading"));
         }
-        reply->deleteLater();
     });
-    lastBytesReceived = pausedBytesReceived;
-    downloadSpeed = 0.0;
-    speedTimer->start(1000);
-    totalTime = 0;
+
+    connect(downloadFile, &DownloadFile::finished, this, [this, row, downloadFile]() {
+        progressTable->setItem(row, 3, new QTableWidgetItem("Completed"));
+        delete downloadFile;
+    });
+
+    connect(downloadFile, &DownloadFile::errorOccurred, this, [this, row, downloadFile](const QString &error) {
+        progressTable->setItem(row, 3, new QTableWidgetItem("Error Occurred"));
+        delete downloadFile;
+    });
+
+    QString savePath = inputForm->getSaveLocation() + "/" +  inputForm->getFileName();
+    downloadFile->startDownload(url, savePath);
 }
 
 void MainWindow::updateProgress(qint64 bytesReceived, qint64 bytesTotal) {

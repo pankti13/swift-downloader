@@ -10,6 +10,9 @@
 #include <QFile>
 #include <QPushButton>
 #include <QHBoxLayout>
+#include <QTimer>
+#include <QList>
+#include <QSemaphore>
 
 class InputForm;
 class QWidget;
@@ -58,6 +61,13 @@ private:
     bool isPaused = false;
     bool isStopped = false;
     qint64 pausedBytesReceived = 0;
+
+    qint64 totalBytes = 0;                              
+    qint64 totalBytesReceived = 0;                      
+    int maxThreads = 4;                               
+    int activeThreads = 0;                              
+    QList<QPair<qint64, qint64>> pausedChunks;         
+    QSemaphore semaphore;                               
 };
 
 #endif

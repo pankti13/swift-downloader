@@ -11,6 +11,8 @@ set(SOURCES
     src/main.cpp
     src/mainwindow.cpp
     src/inputform.cpp
+    src/downloadfile.cpp
+    src/downloadworker.cpp
     src/Swift-Downloader.qrc
 )
 add_executable(Swift-Downloader ${SOURCES})
