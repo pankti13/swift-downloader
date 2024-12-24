@@ -33,6 +33,7 @@ void DownloadWorker::process() {
         emit chunkDownloaded(data); 
     } else {
         qWarning() << "Error downloading chunk:" << reply->errorString();
+        emit downloadStatusChanged("Error Occurred");
     }
 
     reply->deleteLater(); 

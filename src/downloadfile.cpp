@@ -31,9 +31,10 @@ void DownloadFile::startDownload(const QString &url, const QString &savePath) {
                 qDebug() << "Assigned chunk" << i << "start:" << start << "end:" << end;
                 QThread *workerThread = new QThread;
                 DownloadWorker *worker = new DownloadWorker(url, start, end, semaphore);
-                worker->moveToThread(workerThread);
+                worker->moveToThread(workerThread);       
 
                 connect(workerThread, &QThread::started, worker, &DownloadWorker::run);
+                connect(worker, &DownloadWorker::downloadStatusChanged, this, &DownloadFile::downloadStatusChanged);
                 connect(worker, &DownloadWorker::chunkDownloaded, this, &DownloadFile::handleChunkDownloaded);
                 connect(worker, &DownloadWorker::finished, workerThread, &QThread::quit);
                 connect(workerThread, &QThread::finished, workerThread, &QObject::deleteLater);
@@ -72,6 +73,7 @@ void DownloadFile::handleChunkDownloaded(QByteArray data) {
         if (activeThreads == 0) {
             qDebug() << "Merging chunks";
             mergeChunks();
+            emit downloadStatusChanged("Completed");
         }
     }
 }

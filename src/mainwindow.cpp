@@ -99,11 +99,6 @@ void MainWindow::handleFormCancellation() {
     }
 }
 
-void MainWindow::updateStatus(const QString &status) {
-    int row = progressTable->rowCount() - 1; 
-    progressTable->setItem(row, 3, new QTableWidgetItem(status));
-}
-
 void MainWindow::startDownload(const QString &url, const QString &fileName, const QString &saveLocation) {
     int row = progressTable->rowCount() - 1;
     if (row < 0) return;
@@ -121,9 +116,10 @@ void MainWindow::startDownload(const QString &url, const QString &fileName, cons
         }
     });
 
-    connect(downloadFile, &DownloadFile::finished, this, [this, row, downloadFile]() {
-        progressTable->setItem(row, 3, new QTableWidgetItem("Completed"));
-        delete downloadFile;
+    connect(downloadFile, &DownloadFile::downloadStatusChanged, this, [this, row](const QString &status) {
+        QMetaObject::invokeMethod(this, [this, row, status] {
+            progressTable->setItem(row, 3, new QTableWidgetItem(status));
+        });
     });
 
     connect(downloadFile, &DownloadFile::errorOccurred, this, [this, row, downloadFile](const QString &error) {
@@ -235,7 +231,6 @@ void MainWindow::pauseDownload() {
     if (row < 0) return;
 
     if (isPaused) {
-        updateStatus("Downloading");
         isPaused = false;
         pauseButton->setText("Pause");
         pauseButton->setIcon(QIcon(":/icons/pause_icon.png"));
@@ -247,7 +242,6 @@ void MainWindow::pauseDownload() {
 
     } else {
         pausedBytesReceived = lastBytesReceived; 
-        updateStatus("Paused");
         isPaused = true;
         pauseButton->setText("Play");
         pauseButton->setIcon(QIcon(":/icons/play_icon.png"));
@@ -260,7 +254,6 @@ void MainWindow::stopDownload() {
     if (row < 0) return;
 
     if (isStopped) {
-        updateStatus("Downloading");
         isStopped = false;
         stopButton->setText("Stop");
         stopButton->setIcon(QIcon(":/icons/stop_icon.png"));
@@ -276,7 +269,6 @@ void MainWindow::stopDownload() {
 
     } else {
         pausedBytesReceived = lastBytesReceived;
-        updateStatus("Stopped");
         isStopped = true;
         stopButton->setText("Retry");
         stopButton->setIcon(QIcon(":/icons/retry_icon.png"));

@@ -14,14 +14,11 @@ class DownloadFile : public QObject {
 public:
     explicit DownloadFile(const QString &url, const QString &savePath, QObject *parent = nullptr);
     void startDownload(const QString &url, const QString &savePath);
-    void handleDownloadRequest(const QString &url, long long start, long long end);
-    void updateStatus(const QString &status);
 
 signals:
     void downloadProgress(qint64 bytesReceived, qint64 bytesTotal);
-    void downloadFinished();
+    void downloadStatusChanged(const QString &status); 
     void errorOccurred(const QString &error);
-    void finished();
 
 private slots:
     void handleChunkDownloaded(QByteArray data);
@@ -37,7 +34,7 @@ private:
     int activeThreads;
     QMutex chunkMutex;
     QMutex threadMutex;
-    const int maxThreads = 4;
+    const int maxThreads = 5;
 
     QSemaphore semaphore;
 };

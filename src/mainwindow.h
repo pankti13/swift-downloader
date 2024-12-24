@@ -31,7 +31,6 @@ private slots:
 
     void startDownload(const QString &url, const QString &fileName, const QString &saveLocation);
     void updateProgress(qint64 bytesReceived, qint64 bytesTotal);
-    void updateStatus(const QString &status);
     void pauseDownload();
     void stopDownload();
     void calculateSpeed();
@@ -66,7 +65,6 @@ private:
     qint64 totalBytesReceived = 0;                      
     int maxThreads = 4;                               
     int activeThreads = 0;                              
-    QList<QPair<qint64, qint64>> pausedChunks;         
     QSemaphore semaphore;                               
 };
 

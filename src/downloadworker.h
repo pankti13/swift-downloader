@@ -18,6 +18,7 @@ public:
 signals:
     void startDownloadRequest(const QString &url, long long start, long long end);
     void chunkDownloaded(QByteArray data);
+    void downloadStatusChanged(const QString &status); 
     void finished();
 
 private:
