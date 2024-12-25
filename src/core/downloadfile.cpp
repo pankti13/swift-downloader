@@ -18,8 +18,18 @@ void DownloadFile::startDownload(const QString &url, const QString &savePath) {
     QNetworkRequest request = QNetworkRequest(QUrl(url));
     QNetworkReply *reply = manager->head(request);
 
-    connect(reply, &QNetworkReply::finished, this, [this, url, reply, semaphore]() {
+    connect(reply, &QNetworkReply::finished, this, [this, url, savePath, reply, semaphore]() {
         if (reply->error() == QNetworkReply::NoError) {
+            QVariant redirectUrl = reply->attribute(QNetworkRequest::RedirectionTargetAttribute);
+            // Handle HTTP redirect
+            if (redirectUrl.isValid()) {
+                QString newUrl = QUrl(url).resolved(redirectUrl.toUrl()).toString();
+                qDebug() << "Redirected to:" << newUrl;
+                reply->deleteLater();
+                startDownload(newUrl, savePath);
+                return;
+            }
+
             totalBytes = reply->header(QNetworkRequest::ContentLengthHeader).toLongLong();
             qDebug() << "Total bytes from Content-Length header:" << totalBytes;
             qint64 chunkSize = totalBytes / maxThreads;
