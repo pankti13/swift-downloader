@@ -14,24 +14,24 @@ class DownloadFile : public QObject {
 public:
     explicit DownloadFile(const QString &url, const QString &savePath, QObject *parent = nullptr);
     void startDownload(const QString &url, const QString &savePath);
+    void mergeChunks();
+    void handleChunkDownloaded(QByteArray data);
+    QList<QByteArray> chunks;
+    qint64 totalBytes;
+    int activeThreads;
+    QString getUrl() const { return url; } 
+    QString getSavePath() const { return savePath; }
+    qint64 getBytesReceived() { return bytesReceived; }
 
 signals:
     void downloadProgress(qint64 bytesReceived, qint64 bytesTotal);
     void downloadStatusChanged(const QString &status); 
     void errorOccurred(const QString &error);
 
-private slots:
-    void handleChunkDownloaded(QByteArray data);
-
 private:
-    void mergeChunks();
-
     QString url;
     QString savePath;
-    QList<QByteArray> chunks;
-    qint64 totalBytes;
     qint64 bytesReceived;
-    int activeThreads;
     QMutex chunkMutex;
     QMutex threadMutex;
     const int maxThreads = 5;

@@ -10,20 +10,32 @@ include_directories(
     ../src/core
 )
 
-find_package(Qt5 REQUIRED COMPONENTS Core Widgets Network)
+find_package(Qt5 REQUIRED COMPONENTS Core Widgets Network Test)
 
-set(SOURCES
+set(MainWindowTest_SOURCES
     ../src/ui/mainwindow.cpp
     ../src/ui/inputform.cpp
-    ../src/core/downloadfile.cpp
+    ../src/core/downloadfile.cpp 
     ../src/core/downloadworker.cpp
     MainWindowTest.cpp
 )
 
-add_executable(MainWindowTest ${SOURCES})
-target_link_libraries(MainWindowTest Qt5::Core Qt5::Widgets Qt5::Network gtest)
+set(DownloadFileTest_SOURCES
+    ../src/core/downloadfile.cpp 
+    ../src/core/downloadworker.cpp 
+    DownloadFileTest.cpp
+)
+
+add_executable(MainWindowTest ${MainWindowTest_SOURCES})
+add_executable(DownloadFileTest ${DownloadFileTest_SOURCES})
+
+target_link_libraries(MainWindowTest Qt5::Core Qt5::Widgets Qt5::Network gtest Qt5::Test)
+target_link_libraries(DownloadFileTest Qt5::Core Qt5::Widgets Qt5::Network gtest Qt5::Test) 
 
 find_package(GTest REQUIRED)
 target_link_libraries(MainWindowTest GTest::GTest GTest::Main)
+target_link_libraries(DownloadFileTest GTest::GTest GTest::Main)
+
 enable_testing()
 add_test(NAME MainWindowTest COMMAND MainWindowTest)
+add_test(NAME DownloadFileTest COMMAND DownloadFileTest)
