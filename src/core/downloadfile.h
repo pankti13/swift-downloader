@@ -21,6 +21,7 @@ public:
     int activeThreads;
     QString getUrl() const { return url; } 
     QString getSavePath() const { return savePath; }
+    void setSavePath(QString savePath) {this->savePath = savePath;}
     qint64 getBytesReceived() { return bytesReceived; }
 
 signals:
