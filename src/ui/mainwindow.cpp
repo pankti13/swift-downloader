@@ -21,22 +21,28 @@ MainWindow::MainWindow(QWidget *parent)
       networkManager(new QNetworkAccessManager(this)),
       speedTimer(new QTimer(this)) {
 
+    inputForm->setObjectName("inputForm");
     // Setup progress page
     progressTable = new QTableWidget(progressPage);
+    progressTable->setObjectName("progressTable");
     progressTable->setColumnCount(5);
     progressTable->setHorizontalHeaderLabels({"DateTime", "File Name", "Downloaded/Total", "Status", "Remaining Time"});
     progressTable->horizontalHeader()->setStretchLastSection(true);
     progressTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
     progressBar = new QProgressBar(progressPage);
+    progressBar->setObjectName("progressBar");
     progressBar->setRange(0, 100);
     progressBar->setValue(0);
 
     pauseButton = new QPushButton("Pause", progressPage);
+    pauseButton->setObjectName("pauseButton");
     pauseButton->setIcon(QIcon(":/icons/pause_icon.png"));
     stopButton = new QPushButton("Stop", progressPage);
+    stopButton->setObjectName("stopButton");
     stopButton->setIcon(QIcon(":/icons/stop_icon.png"));
     cancelButton = new QPushButton("Cancel", progressPage);
+    cancelButton->setObjectName("cancelButton");
     cancelButton->setIcon(QIcon(":/icons/cancel_icon.png"));
 
     QHBoxLayout *buttonLayout = new QHBoxLayout;
@@ -63,6 +69,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(inputForm, &InputForm::formSubmitted, this, &MainWindow::handleFormSubmission);
     connect(inputForm, &InputForm::formCanceled, this, &MainWindow::handleFormCancellation);
     resize(1200, 600);
+    progressPage->setObjectName("progressPage");
 }
 
 MainWindow::~MainWindow() {}
